@@ -1,0 +1,19 @@
+- planeacion, terminar actividades 1er ciclo 
+
+- programar inspeccion de codigo
+
+- Antes de empezar actividades, pero despues del proxy
+	- @PlanQ
+		planeacion (inyectados=10, remover=3)
+		diseno
+		codificacion
+		inspeccion
+		pruebas
+		postmortem
+		
+	- estimado inyectar/remover LOCs por fase.
+	
+- Inspeccionar codigo con lista de chequeo, antes de ejecutar (sin test unitarios)
+	- @LogD ( tipo = 122, fase = 1)
+	- defectos.properties >> desde el checklist
+	- fases.properties
