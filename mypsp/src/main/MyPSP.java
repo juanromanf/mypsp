@@ -107,7 +107,7 @@ public class MyPSP {
 			printStatistics();
 			
 		} else {
-			System.out.println("Imposible compilar fuentes !");
+			System.err.println("Imposible compilar fuentes !");
 		}
 	}
 	
