@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import annotation.Loc;
+import annotation.LogD;
 import annotation.LogInt;
 import annotation.LogT;
 import annotation.Plan;
+import annotation.PlanQ;
 
 public class AnnotationStatistics {
 
 	private List<LogT> logTList;
 	private List<LogInt> logIntList;
 	private List<Loc> locList;
+	private List<PlanQ> planQList;
+	private List<LogD> logDList;
 	private Plan plan;
 
 	public AnnotationStatistics() {
@@ -20,6 +24,8 @@ public class AnnotationStatistics {
 		this.logTList = new ArrayList<LogT>();
 		this.logIntList = new ArrayList<LogInt>();
 		this.locList = new ArrayList<Loc>();
+		this.planQList = new ArrayList<PlanQ>();
+		this.logDList = new ArrayList<LogD>();
 	}
 
 	public void addLogT(LogT a) {
@@ -32,6 +38,14 @@ public class AnnotationStatistics {
 
 	public void addLoc(Loc a) {
 		this.locList.add(a);
+	}
+
+	public void addPlanQ(PlanQ a) {
+		this.planQList.add(a);
+	}
+
+	public void addLogD(LogD a) {
+		this.logDList.add(a);
 	}
 
 	public Plan getPlan() {
@@ -66,6 +80,22 @@ public class AnnotationStatistics {
 		this.locList = locList;
 	}
 
+	public List<PlanQ> getPlanQList() {
+		return planQList;
+	}
+
+	public void setPlanQList(List<PlanQ> planQList) {
+		this.planQList = planQList;
+	}
+
+	public List<LogD> getLogDList() {
+		return logDList;
+	}
+
+	public void setLogDList(List<LogD> logDList) {
+		this.logDList = logDList;
+	}
+
 	public double getLogTSum() {
 
 		double sum = 0;
@@ -96,9 +126,19 @@ public class AnnotationStatistics {
 	public double getRealTime() {
 		return getLogTSum() - getLogIntSum();
 	}
-	
+
 	public int getPlannedTime() {
 		return plan.time();
 	}
-
+	
+	public int getTotalDefects(int phaseId) {
+		int total = 0;
+		
+		for(LogD a : this.logDList) {
+			if (a.phase() == phaseId) {
+				total++;
+			}
+		}
+		return total;
+	}
 }

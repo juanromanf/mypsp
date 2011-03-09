@@ -1,28 +1,21 @@
 package main;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
+import annotation.Defects;
 import annotation.Interruptions;
 import annotation.Loc;
+import annotation.LogD;
 import annotation.LogInt;
 import annotation.LogT;
+import annotation.PhaseDefects;
 import annotation.Plan;
+import annotation.PlanQ;
 import annotation.Tasks;
 
+import common.AnnotationProcessor;
 import common.AnnotationStatistics;
-import common.DirectoryHelper;
-import common.MyInterruptions;
-import common.MyTasks;
 import common.SimpleCommandLineParser;
 
 @Plan(time = 694, size = 190)
@@ -36,151 +29,107 @@ import common.SimpleCommandLineParser;
 	@LogT(date = "2011/02/21", taskId = 7, time = 5),
 	@LogT(date = "2011/02/21", taskId = 8, time = 126),
 	@LogT(date = "2011/02/21", taskId = 9, time = 68),
-	@LogT(date = "2011/02/21", taskId = 999, time = 60)
+	@LogT(date = "2011/02/21", taskId = 999, time = 60),
+	//ciclo 2
+	@LogT(date = "2011/03/08", taskId = 1, time = 25),
+	@LogT(date = "2011/03/08", taskId = 2, time = 17),
+	@LogT(date = "2011/03/08", taskId = 3, time = 5),
+	@LogT(date = "2011/03/08", taskId = 4, time = 5),
+	@LogT(date = "2011/03/08", taskId = 5, time = 56),
+	@LogT(date = "2011/03/08", taskId = 6, time = 13),
+	@LogT(date = "2011/03/08", taskId = 7, time = 10),
+	@LogT(date = "2011/03/08", taskId = 8, time = 37),
+	@LogT(date = "2011/03/08", taskId = 999, time = 30)
 })
-	
+
 @Interruptions({ 
 	@LogInt(date = "2011/02/20", intId = 1, time = 30),
 	@LogInt(date = "2011/02/20", intId = 2, time = 180),
-	@LogInt(date = "2011/02/21", intId = 1, time = 10)
+	@LogInt(date = "2011/02/21", intId = 1, time = 10),
+	// ciclo 2
+	@LogInt(date = "2011/03/08", intId = 3, time = 10),
+	@LogInt(date = "2011/03/08", intId = 4, time = 10)
+	
+})
+
+@PhaseDefects({
+	@PlanQ(phase = 1, injected = 0, removed = 0),
+	@PlanQ(phase = 2, injected = 0, removed = 0),
+	@PlanQ(phase = 3, injected = 5, removed = 5),
+	@PlanQ(phase = 4, injected = 7, removed = 6),
+	@PlanQ(phase = 5, injected = 3, removed = 2)
+})
+
+@Defects({
+	@LogD(phase = 3, type = 12),
+	@LogD(phase = 3, type = 13),
+	@LogD(phase = 4, type = 1),
+	@LogD(phase = 4, type = 14),
+	@LogD(phase = 4, type = 20),
+	@LogD(phase = 4, type = 21),
+	@LogD(phase = 5, type = 17)
 })
 public class MyPSP {
 
-	private MyTasks tasks;
-	private MyInterruptions interruptions;
-	private DirectoryHelper directoryHelper;
-	private AnnotationStatistics statistics;
+	private AnnotationProcessor processor;
 
 	public MyPSP(String path) throws FileNotFoundException, IOException {
 
-		this.tasks = new MyTasks(path);
-		this.interruptions = new MyInterruptions(path);
-		this.directoryHelper = new DirectoryHelper();
-		this.statistics = new AnnotationStatistics();
+		processor = new AnnotationProcessor(path);
 	}
 
-	@SuppressWarnings("rawtypes")
-	@Loc(size = 49)
-	public void scanDirectory(String path) {
-		
-		if (! path.endsWith(File.separator)) path = path.concat(File.separator);
-		
-		System.out.println("Escaneando directorio "+ path);
-		
-		List<File> sourceFileList = directoryHelper.findSources(new File(path));
-		
-		String compileDestination = path + ".." + File.separator + "bin" + File.separator;
-		boolean result = directoryHelper.compileSources(sourceFileList, compileDestination);
-		
-		if(result) {
-			System.out.println("Procesando clases...");
-			
-			List<File> classesList = directoryHelper.findClasses(new File(compileDestination));
-			
-			for(File classFile: classesList) {
-				String className = classFile.getPath();
-				className = className.replace(path, "").replace(".." + File.separator + "bin" + File.separator, "").replace(".class", "").replace(File.separator, ".");
-				
-				try {
-					URL[] urls = new URL[] { new URL( "file://"+ compileDestination) };
-					URLClassLoader ucl = new URLClassLoader(urls);
-					
-					Class _class = ucl.loadClass(className);
-				
-					System.out.println("Procesando " + className);
-					if (!_class.isInterface()) {						
-						
-						processAnnotations(_class);
-					}
+	private void processDirectory(String path) {
 
-				} catch (ExceptionInInitializerError e) {
-					e.printStackTrace();
-					
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-					
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				}
-			}
-			
+		try {
+			processor.scanDirectory(path);
 			printStatistics();
 			
-		} else {
-			System.err.println("Imposible compilar fuentes !");
-		}
-	}
-	
-	@SuppressWarnings("rawtypes")
-	@Loc(size = 42)
-	public void processAnnotations(Class cls) {
-		
-		List<Annotation> annotations = new ArrayList<Annotation>();
-		
-		// add class annotations
-		annotations.addAll( Arrays.asList(cls.getAnnotations()) );
-		
-		// add each method annotations
-		for (Method m : cls.getMethods()) {			
-			annotations.addAll( Arrays.asList(m.getAnnotations()) );		
-		}
-		
-		for (Annotation a : annotations) {
+		} catch (RuntimeException e) {
 			
-			if (a.annotationType().getName().endsWith("Tasks")) {
-				Tasks tasks = (Tasks) a;
-				for (int i = 0; i < tasks.value().length; i++) {
-					statistics.addLogT(tasks.value()[i]);
-				}
-			}			
-			if (a.annotationType().getName().endsWith("Interruptions")) {
-				Interruptions interruptions = (Interruptions) a;
-				for (int i = 0; i < interruptions.value().length; i++) {
-					statistics.addLogInt(interruptions.value()[i]);
-				}
-			}
-			if (a.annotationType().getName().endsWith("LogT")) {
-				statistics.addLogT((LogT) a);
-			}				
-			if (a.annotationType().getName().endsWith("LogInt")) {
-				statistics.addLogInt((LogInt) a);
-			}				
-			if (a.annotationType().getName().endsWith("Loc")) {
-				statistics.addLoc((Loc) a);
-			}
-			if (a.annotationType().getName().endsWith("Plan")) {
-				statistics.setPlan((Plan) a);
-			}
+			System.err.println(e.getMessage());
 		}
 	}
-	
+
 	@Loc(size = 28)
 	public void printStatistics() {
 		
+		AnnotationStatistics stats = processor.getStatistics();
+
 		System.out.println("");
 		System.out.println("                MyPSP                  ");
 		System.out.println("_______________________________________");
-		System.out.println(" - Numero @LogT          : "+ statistics.getLogTList().size());
-		System.out.println(" - Numero @LogInt        : "+ statistics.getLogIntList().size());
-		System.out.println(" - Numero @Loc           : "+ statistics.getLocList().size());
+		System.out.println(" - Numero @LogT          : " + stats.getLogTList().size());
+		System.out.println(" - Numero @LogInt        : " + stats.getLogIntList().size());
+		System.out.println(" - Numero @Loc           : " + stats.getLocList().size());
 		System.out.println("_______________________________________");
-		System.out.println(" - Tiempo Planeado       : "+ statistics.getPlannedTime());
-		System.out.println(" - LOCs Estimadas        : "+ statistics.getPlan().size());
-		System.out.println(" - Tiempo Total          : "+ statistics.getLogTSum());
-		System.out.println(" - Tiempo Interrupciones : "+ statistics.getLogIntSum());
+		System.out.println(" - Tiempo Planeado       : " + stats.getPlannedTime());
+		System.out.println(" - LOCs Estimadas        : " + stats.getPlan().size());
+		System.out.println(" - Tiempo Total          : " + stats.getLogTSum());
+		System.out.println(" - Tiempo Interrupciones : " + stats.getLogIntSum());
 		System.out.println("_______________________________________");
-		System.out.println(" - LOCs Totales          : "+ statistics.getLocSum());
-		System.out.println(" - Productividad         : "+ statistics.getRealTime());
+		System.out.println(" - LOCs Totales          : " + stats.getLocSum());
+		System.out.println(" - Productividad         : " + stats.getRealTime());
 		System.out.println("");
+		
+		System.out.println("               Defectos                ");
+		System.out.println("_______________________________________");
+		
+		for(PlanQ pq : stats.getPlanQList()) {
+			System.out.println(String.format(" - Estimado Fase %d: Inyectar = %02d  Remover = %02d",
+					pq.phase(), pq.injected(), pq.removed()));
+			System.out.println("  * Removidos = " + stats.getTotalDefects(pq.phase()));
+			System.out.println("");
+		}
 	}
 
 	/**
 	 * MyPSP Main
+	 * 
 	 * @param args
 	 */
 	@Loc(size = 30)
 	public static void main(String[] args) {
-		
+
 		System.out.println("Iniciando MyPSP...");
 
 		SimpleCommandLineParser parser = new SimpleCommandLineParser(args);
@@ -196,12 +145,13 @@ public class MyPSP {
 			if (parser.containsKey("d")) {
 				// Scan annotations in directory
 				String path = parser.getValue("d");
-				app.scanDirectory(path);
+				app.processDirectory(path);
 			}
 			System.out.println("Finalizado...");
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
 }

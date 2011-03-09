@@ -47,11 +47,10 @@ public class DirectoryHelper {
 			fileManager.close();
 			
 		} catch (NullPointerException e) {
-			System.out.println("Imposible ejecutar tarea de compilacion, utilize Java JDK !!");
-			e.printStackTrace();
+			System.err.println("Imposible compilar los archivos, utilize Java JDK para ejecutar MYPSP !!");			
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 		return result;
 	}
